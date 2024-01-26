@@ -18,14 +18,28 @@ public class CatalogController : ControllerBase
     private readonly CatalogContext _catalogContext;
     private readonly CatalogSettings _settings;
     private readonly ICatalogIntegrationEventService _catalogIntegrationEventService;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+    private readonly ILogger<CatalogController> _logger;
 
-    public CatalogController(CatalogContext context, IOptionsSnapshot<CatalogSettings> settings, ICatalogIntegrationEventService catalogIntegrationEventService)
+    public CatalogController(CatalogContext context, IOptionsSnapshot<CatalogSettings> settings, ICatalogIntegrationEventService catalogIntegrationEventService, IWebHostEnvironment webHostEnvironment, ILogger<CatalogController> logger)
     {
         _catalogContext = context ?? throw new ArgumentNullException(nameof(context));
         _catalogIntegrationEventService = catalogIntegrationEventService ?? throw new ArgumentNullException(nameof(catalogIntegrationEventService));
+        _webHostEnvironment = webHostEnvironment ?? throw new ArgumentNullException(nameof(webHostEnvironment));
+        _logger = logger;
         _settings = settings.Value;
 
         context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+    }
+
+    [HttpGet]
+    [Route("seed")]
+    public async Task<IActionResult> SeedDatabase()
+    {
+        var seeder = new CatalogContextSeed();
+        await seeder.SeedAsync(_catalogContext, _webHostEnvironment, _logger);
+
+        return Ok();
     }
 
     [HttpGet]
